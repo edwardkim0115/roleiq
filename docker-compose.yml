@@ -1,0 +1,53 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: roleiq-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-roleiq}
+      POSTGRES_USER: ${POSTGRES_USER:-roleiq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-roleiq}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-roleiq} -d ${POSTGRES_DB:-roleiq}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+    container_name: roleiq-api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://roleiq:roleiq@db:5432/roleiq}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_PARSER_MODEL: ${OPENAI_PARSER_MODEL:-gpt-4.1}
+      OPENAI_SUGGESTION_MODEL: ${OPENAI_SUGGESTION_MODEL:-gpt-4.1}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-10}
+      CORS_ORIGINS: http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./apps/web
+    container_name: roleiq-web
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+      WEB_API_BASE_URL: ${WEB_API_BASE_URL:-http://api:8000}
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
