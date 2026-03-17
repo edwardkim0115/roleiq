@@ -21,3 +21,4 @@ coverage/
 *.log
 *.egg-info/
 pytest-cache-files-*
+ 
