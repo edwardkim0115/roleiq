@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
@@ -26,6 +28,7 @@ from app.services.document_ingestion import DocumentExtractionError, DocumentExt
 
 router = APIRouter(tags=["analyses"])
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 def get_pipeline(session: Session) -> AnalysisPipeline:
@@ -81,9 +84,10 @@ async def create_analysis(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - safety path
         session.rollback()
+        logger.exception("Analysis creation failed unexpectedly")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Analysis failed: {exc}",
+            detail="Analysis failed due to an unexpected server error",
         ) from exc
     return get_analysis(artifacts.analysis.id, session)
 

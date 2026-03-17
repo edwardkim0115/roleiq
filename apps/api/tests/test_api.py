@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.services.analysis_pipeline import AnalysisPipeline
 from tests.helpers import sample_resume_text
 
 
@@ -63,3 +64,19 @@ def test_analysis_api_rejects_blank_inputs(client):
     )
     assert blank_resume.status_code == 400
     assert blank_resume.json()["detail"] == "No readable text found in the uploaded document"
+
+
+def test_analysis_api_hides_unexpected_server_errors(client, monkeypatch):
+    def crash(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(AnalysisPipeline, "run", crash)
+
+    response = client.post(
+        "/api/analyses",
+        files={"file": ("resume.txt", sample_resume_text().encode("utf-8"), "text/plain")},
+        data={"job_text": "Backend Engineer"},
+    )
+
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Analysis failed due to an unexpected server error"
