@@ -22,3 +22,4 @@ web-lint:
 
 migrate:
 	$(DC) run --rm api alembic upgrade head
+ 
