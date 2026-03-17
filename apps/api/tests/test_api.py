@@ -49,3 +49,17 @@ Kubernetes
     delete_response = client.delete(f"/api/analyses/{analysis_id}")
     assert delete_response.status_code == 204
     assert client.get("/api/analyses").json() == []
+
+
+def test_analysis_api_rejects_blank_inputs(client):
+    blank_job = client.post("/api/jobs/parse-text", json={"job_text": "   "})
+    assert blank_job.status_code == 400
+    assert blank_job.json()["detail"] == "Job description cannot be empty"
+
+    blank_resume = client.post(
+        "/api/analyses",
+        files={"file": ("resume.txt", b"   \n\n", "text/plain")},
+        data={"job_text": "Backend Engineer"},
+    )
+    assert blank_resume.status_code == 400
+    assert blank_resume.json()["detail"] == "No readable text found in the uploaded document"

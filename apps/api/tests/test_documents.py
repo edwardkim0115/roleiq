@@ -51,3 +51,11 @@ def test_invalid_file_type_is_rejected(extractor):
     else:  # pragma: no cover - defensive assertion
         raise AssertionError("Expected extraction error")
 
+
+def test_blank_document_is_rejected(extractor):
+    try:
+        extractor.extract("resume.txt", b"   \n\n   ")
+    except DocumentExtractionError as exc:
+        assert "No readable text found" in str(exc)
+    else:  # pragma: no cover - defensive assertion
+        raise AssertionError("Expected extraction error")

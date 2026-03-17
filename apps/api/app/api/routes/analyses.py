@@ -33,6 +33,16 @@ def get_pipeline(session: Session) -> AnalysisPipeline:
     return AnalysisPipeline(session=session, extractor=extractor)
 
 
+def _clean_job_text(job_text: str) -> str:
+    cleaned = job_text.strip()
+    if not cleaned:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Job description cannot be empty",
+        )
+    return cleaned
+
+
 @router.post("/resumes/upload", response_model=DocumentPreview)
 async def preview_resume_upload(
     file: UploadFile = File(...),
@@ -51,7 +61,7 @@ def parse_job_text(
     request: JobParseRequest,
     session: Session = Depends(get_db_session),
 ) -> JobProfile:
-    return get_pipeline(session).preview_job(request.job_text)
+    return get_pipeline(session).preview_job(_clean_job_text(request.job_text))
 
 
 @router.post("/analyses", response_model=AnalysisDetail, status_code=status.HTTP_201_CREATED)
@@ -63,8 +73,9 @@ async def create_analysis(
 ) -> AnalysisDetail:
     pipeline = get_pipeline(session)
     payload = await file.read()
+    cleaned_job_text = _clean_job_text(job_text)
     try:
-        artifacts = pipeline.run(file.filename or "resume.txt", payload, job_text, job_label)
+        artifacts = pipeline.run(file.filename or "resume.txt", payload, cleaned_job_text, job_label)
     except DocumentExtractionError as exc:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

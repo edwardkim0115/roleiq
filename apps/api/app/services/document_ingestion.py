@@ -49,6 +49,8 @@ class DocumentExtractor:
             fragments = self._extract_txt(payload)
 
         raw_text = "\n\n".join(fragment.text for fragment in fragments if fragment.text.strip())
+        if not fragments or not clean_text(raw_text):
+            raise DocumentExtractionError("No readable text found in the uploaded document")
         return ExtractedDocument(
             filename=safe_name,
             file_type=extension,
@@ -131,4 +133,3 @@ class DocumentExtractor:
                 )
             )
         return fragments
-
