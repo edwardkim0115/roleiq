@@ -26,7 +26,7 @@ export function AnalysisDetail({ analysis }: { analysis: AnalysisDetailType }) {
             </h1>
             <p className="mt-2 text-base text-slate-600">
               Resume: {analysis.resume_document.filename}
-              {analysis.job_posting.company ? ` • ${analysis.job_posting.company}` : ""}
+              {analysis.job_posting.company ? ` | ${analysis.job_posting.company}` : ""}
             </p>
           </div>
         </div>
@@ -52,4 +52,3 @@ export function AnalysisDetail({ analysis }: { analysis: AnalysisDetailType }) {
     </div>
   );
 }
-
